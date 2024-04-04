@@ -1,20 +1,28 @@
-const express = require('express')
-const app = express()
-const { chats } = require("./data/data");
+const express = require('express');
+const app = express();
 require("dotenv").config();
+const { chats } = require("./data/data");
+const {notFound, errorHandler} = require("./middlewares/errorMiddleware");
+
+app.use(express.json());
+
+const colors = require("colors");
+
+//------- Kết nối CSDL
+const connectDB = require('./config/db');
+connectDB();
 
 
 app.get('/', (req, res) => res.send('Hello World!'));
 
-app.get("/api/chat", (req, res) => {
-    res.send(chats);
-});
+//------- Định nghĩa các Route
+const userRoute = require("./routes/userRoute");
+app.use("/api/user/", userRoute);
+//-------
 
-app.get("/api/chat/:id", (req, res) => {
-    // console.log(req.params.id);
-    const singleChat = chats.find(c => c._id === req.params.id);
-    res.send(singleChat);
-});
+app.use(notFound);
+app.use(errorHandler);
 
+// Định nghĩa port
 const port = process.env.PORT;
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.listen(port, () => console.log(`Example app listening on port ${port}!`.yellow.bold))
