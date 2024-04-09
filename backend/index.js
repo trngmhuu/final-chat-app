@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 require("dotenv").config();
-const { chats } = require("./data/data");
+//const { chats } = require("./data/data");
 const {notFound, errorHandler} = require("./middlewares/errorMiddleware");
 
 app.use(express.json());
@@ -13,11 +13,14 @@ const connectDB = require('./config/db');
 connectDB();
 
 
-app.get('/', (req, res) => res.send('Hello World!'));
+// app.get('/', (req, res) => res.send('Hello World!'));
 
 //------- Định nghĩa các Route
 const userRoute = require("./routes/userRoute");
 app.use("/api/user/", userRoute);
+
+const chatRoute = require("./routes/chatRoute");
+app.use("/api/chat", chatRoute);
 //-------
 
 app.use(notFound);
