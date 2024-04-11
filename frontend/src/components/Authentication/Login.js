@@ -73,7 +73,7 @@ const Login = () => {
             onChange={(e) => setEmail(e.target.value)}
           />
         </FormControl>
-        {/* password */}
+        {/* Password */}
         <FormControl id="password" isRequired>
           <FormLabel>Mật khẩu</FormLabel>
           <InputGroup>
