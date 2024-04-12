@@ -1,15 +1,15 @@
-const express = require('express');
+const express = require("express");
 const app = express();
 require("dotenv").config();
 // const { chats } = require("./data/data");
-const {notFound, errorHandler} = require("./middlewares/errorMiddleware");
+const { notFound, errorHandler } = require("./middlewares/errorMiddleware");
 
 app.use(express.json());
 
 const colors = require("colors");
 
 //------- Kết nối CSDL
-const connectDB = require('./config/db');
+const connectDB = require("./config/db");
 connectDB();
 
 //------- Định nghĩa các Route
@@ -28,4 +28,37 @@ app.use(errorHandler);
 
 //------- Định nghĩa port
 const port = process.env.PORT;
-app.listen(port, () => console.log(`Example app listening on port ${port}!`.yellow.bold))
+const server = app.listen(port, () =>
+  console.log(`Example app listening on port ${port}!`.yellow.bold)
+);
+
+//------- Cấu hình socket.io
+const io = require("socket.io")(server, {
+  pingTimeout: 60000,
+  cors: {
+    origin: "http://localhost:3000",
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("Connected to socket.io server");
+
+  socket.on("setup", (userData) => {
+    socket.join(userData._id);
+    socket.emit("connected");
+  });
+
+  socket.on("join chat", (room) => {
+    socket.join(room);
+    console.log("User joined room: " + room);
+  });
+
+  socket.on("new message", (newMessageReceived) => {
+    var chat = newMessageReceived.chat;
+    if (!chat.users) return console.log("chat.users không xác định");
+    chat.users.forEach((user) => {
+      if (user._id === newMessageReceived.sender._id) return;
+      socket.in(user._id).emit("message received", newMessageReceived);
+    });
+  });
+});

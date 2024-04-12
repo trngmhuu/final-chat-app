@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { ChatState } from "../Context/ChatProvider";
 import { Box, Text } from "@chakra-ui/layout";
-import { IconButton, Spinner, FormControl, Input } from "@chakra-ui/react";
+import { IconButton, Spinner, FormControl, Input, effect } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useState } from "react";
 import { ArrowBackIcon } from "@chakra-ui/icons";
@@ -11,12 +11,18 @@ import axios from "axios";
 import { useToast } from "@chakra-ui/toast";
 import "../components/style.css";
 import ScrollableChat from "./ScrollableChat";
+import io from "socket.io-client";
+
+const ENDPOINT = "http://localhost:5000";
+var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState();
+  const [socketConnected, setSocketConnected] = useState(false);
+
   const { user, selectedChat, setSelectedChat } = ChatState();
   const toast = useToast();
 
@@ -35,6 +41,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       );
       setMessages(data);
       setLoading(false);
+      socket.emit("join chat", selectedChat._id);
     } catch (error) {
       toast({
         title: "Đã có lỗi xảy ra!",
@@ -48,8 +55,26 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   };
 
   useEffect(() => {
+    socket = io(ENDPOINT);
+    socket.emit("setup", user);
+    socket.on("connection", () => setSocketConnected(true));
+  }, [])
+
+  useEffect(() => {
     fetchMessages();
+    selectedChatCompare = selectedChat;
   }, [selectedChat]);
+
+  useEffect(() => {
+    socket.on("message received", (newMessageReceived) => {
+      if (!selectedChatCompare || selectedChatCompare._id !== newMessageReceived.chat._id) {
+
+      }
+      else {
+        setMessages([...messages, newMessageReceived]);
+      }
+    });
+  });
 
   const sendMessage = async (e) => {
     if (e.key === "Enter" && newMessage) {
@@ -70,7 +95,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           config
         );
         console.log(data);
-        
+        socket.emit("new message", data);
         setMessages([...messages, data]);
       } catch (error) {
         toast({
@@ -88,6 +113,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
   };
+
+  
 
   return (
     <>
