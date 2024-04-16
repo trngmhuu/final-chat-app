@@ -6,8 +6,6 @@ import {
   Spinner,
   FormControl,
   Input,
-  border,
-  position,
 } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useState } from "react";
@@ -130,7 +128,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       } catch (error) {
         toast({
           title: "Đã có lỗi xảy ra!",
-          description: "Failed to send the Message",
+          description: "Gửi tin nhắn thất bại",
           status: "error",
           duration: 5000,
           isClosable: true,
@@ -221,7 +219,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               />
             ) : (
               <div className="messages">
-                <ScrollableChat messages={messages} />
+                <ScrollableChat messages={messages} socket={socket} />
               </div>
             )}
             <FormControl onKeyDown={sendMessage} isRequired marginTop={3}>

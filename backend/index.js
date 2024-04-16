@@ -50,7 +50,6 @@ io.on("connection", (socket) => {
 
   socket.on("join chat", (room) => {
     socket.join(room);
-    console.log("User joined room: " + room);
   });
 
   socket.on("typing", (room) => socket.in(room).emit("typing"));
@@ -58,10 +57,19 @@ io.on("connection", (socket) => {
 
   socket.on("new message", (newMessageReceived) => {
     var chat = newMessageReceived.chat;
-    if (!chat.users) return console.log("chat.users không xác định");
+    if (!chat.users) return console.log("Lỗi, user không tồn tại");
     chat.users.forEach((user) => {
       if (user._id === newMessageReceived.sender._id) return;
       socket.in(user._id).emit("message received", newMessageReceived);
     });
   });
+
+  // socket.on("delete message", async (messageId) => {
+  //   try {
+  //     socket.emit("message deleted", messageId);
+  //   } catch (error) {
+  //     console.error("Lỗi khi xóa tin nhắn: ", error);
+  //   }
+  // });
+  
 });

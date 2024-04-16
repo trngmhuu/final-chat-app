@@ -12,13 +12,27 @@ import {
   isSameUser,
 } from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
+import axios from "axios";
+// import io from "socket.io-client";
 
 const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
   const [selectedMessage, setSelectedMessage] = useState(null);
 
-  const handleDelete = (messageId) => {
-    console.log("Xóa tin nhắn:", messageId);
+  const handleDelete = async (messageId) => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      await axios.delete(`/api/message/${messageId}`, config);
+      console.log("Xóa tin nhắn thành công!");
+      // io.emit("delete message", messageId);
+    }
+    catch (error) {
+      console.error("Lỗi: ", error);
+    }
   };
 
   const handleReply = (messageId) => {

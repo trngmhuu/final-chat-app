@@ -19,11 +19,6 @@ const sendMessage = asyncHandler(async (req, res) => {
     const receiverIds = chat.users;
     const senderIndex = receiverIds.indexOf(req.user._id.toString());
 
-    // Loại bỏ id của người gửi khỏi danh sách người nhận
-    if (senderIndex !== -1) {
-      receiverIds.splice(senderIndex, 1);
-    }
-
     // Tạo tin nhắn mới chỉ với danh sách người nhận
     var message = await Message.create({
       sender: req.user._id,
@@ -38,7 +33,7 @@ const sendMessage = asyncHandler(async (req, res) => {
       select: "name pic email",
     });
     await Chat.findByIdAndUpdate(req.body.chatId, {
-      latestMessage: message
+      latestMessage: message,
     });
     res.json(message);
   } catch (error) {
@@ -49,15 +44,27 @@ const sendMessage = asyncHandler(async (req, res) => {
 
 const allMessages = asyncHandler(async (req, res) => {
   try {
-    const messages = await Message.find({ chat: req.params.chatId })
-      .populate("sender", "name pic email")
-      .populate("chat");
-    res.json(messages);
+    // Tìm tin nhắn theo chatId
+    const messages = await Message.find({ chat: req.params.chatId });
+
+    // Lọc tin nhắn chỉ cho những người dùng có tên trong danh sách receiver
+    const filteredMessages = messages.filter(message =>
+      message.receiver.includes(req.user._id.toString())
+    );
+
+    // Populate thông tin sender và chat cho tin nhắn
+    const populatedMessages = await Message.populate(filteredMessages, [
+      { path: "sender", select: "name pic email" },
+      { path: "chat" }
+    ]);
+
+    res.json(populatedMessages);
   } catch (error) {
     res.status(400);
     throw new Error(error.message);
   }
 });
+
 
 const deleteMessage = asyncHandler(async (req, res) => {
   const messageId = req.params.messageId;
@@ -70,14 +77,23 @@ const deleteMessage = asyncHandler(async (req, res) => {
       throw new Error("Không tìm thấy tin nhắn");
     }
 
-    // Kiểm tra xem người dùng có quyền xóa tin nhắn không
     if (message.sender.toString() !== req.user._id.toString()) {
-      res.status(403);
-      throw new Error("Bạn không có quyền xóa tin nhắn này");
-    }
+      // Lấy danh sách người nhận từ tin nhắn
+      let receiverIds = message.receiver;
 
-    // Xóa tin nhắn
-    await Message.findByIdAndDelete(messageId);
+      // Loại bỏ id của người dùng khỏi danh sách người nhận
+      const userIndex = receiverIds.indexOf(req.user._id.toString());
+      if (userIndex !== -1) {
+        receiverIds.splice(userIndex, 1);
+      }
+
+      // Cập nhật tin nhắn với danh sách người nhận mới
+      await Message.findByIdAndUpdate(messageId, { receiver: receiverIds });
+    }
+    else
+    {
+      await Message.findByIdAndDelete(messageId);
+    }
 
     res.json({ message: "Xóa tin nhắn thành công" });
   } catch (error) {
@@ -86,4 +102,4 @@ const deleteMessage = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { sendMessage, allMessages, deleteMessage }
+module.exports = { sendMessage, allMessages, deleteMessage };
