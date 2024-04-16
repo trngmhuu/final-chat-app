@@ -17,14 +17,12 @@ const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
   const [selectedMessage, setSelectedMessage] = useState(null);
 
-  const handleDeleteMessage = (messageId) => {
-    // Thực hiện xóa tin nhắn
-    console.log("Xóa tin nhắn có ID:", messageId);
+  const handleDelete = (messageId) => {
+    console.log("Xóa tin nhắn:", messageId);
   };
 
-  const handleReplyMessage = (messageId) => {
-    // Thực hiện trả lời tin nhắn
-    console.log("Trả lời tin nhắn có ID:", messageId);
+  const handleReply = (messageId) => {
+    console.log("Trả lời tin nhắn:", messageId);
   };
 
   return (
@@ -53,34 +51,62 @@ const ScrollableChat = ({ messages }) => {
                 marginLeft: isSameSenderMargin(messages, m, i, user._id),
                 marginTop: isSameUser(messages, m, i, user._id) ? 3 : 10,
                 borderRadius: "20px",
-                padding: "5px 15px",
+                padding: "10px 20px",
                 maxWidth: "75%",
+                display: "flex",
+                flexDirection: "column",
                 position: "relative",
+                fontSize: "16px"
               }}
+              onClick={() => setSelectedMessage(m._id)}
             >
               {m.content}
-              {/* Hiển thị biểu tượng ba chấm và menu */}
-              <Menu>
-                <MenuButton
-                  as={IconButton}
-                  aria-label="Options"
-                  icon={<BiDotsVerticalRounded />}
-                  variant="ghost"
-                  size="sm"
-                  ml={2}
-                />
-                <MenuList>
-                  {m.sender._id === user._id && (
-                    <MenuItem onClick={() => handleDeleteMessage(m._id)}>
-                      Xóa
-                    </MenuItem>
-                  )}
-                  <MenuItem onClick={() => handleReplyMessage(m._id)}>
-                    Trả lời
-                  </MenuItem>
-                </MenuList>
-              </Menu>
             </span>
+            {selectedMessage === m._id && m.sender._id === user._id && (
+              <span style={{ position: "relative" }}>
+                <Menu>
+                  <MenuButton
+                    as={IconButton}
+                    aria-label="Options"
+                    icon={<BiDotsVerticalRounded />}
+                    variant="outline"
+                    size="xs"
+                    position="relative"
+                    right="5px"
+                    top="50%"
+                    transform="translateY(-50%)"
+                  />
+                  <MenuList position="relative">
+                    <MenuItem onClick={() => handleDelete(m._id)}>Xóa</MenuItem>
+                    <MenuItem onClick={() => handleReply(m._id)}>
+                      Trả lời
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
+              </span>
+            )}
+            {selectedMessage === m._id && m.sender._id !== user._id && (
+              <span style={{ position: "relative" }}>
+                <Menu>
+                  <MenuButton
+                    as={IconButton}
+                    aria-label="Options"
+                    icon={<BiDotsVerticalRounded />}
+                    variant="outline"
+                    size="xs"
+                    position="absolute"
+                    left="5px"
+                    top="50%"
+                    transform="translateY(-50%)"
+                  />
+                  <MenuList>
+                    <MenuItem onClick={() => handleReply(m._id)}>
+                      Trả lời
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
+              </span>
+            )}
           </div>
         ))}
     </ScrollableFeed>

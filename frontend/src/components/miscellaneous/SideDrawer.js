@@ -18,16 +18,19 @@ import { ChatState } from "../../Context/ChatProvider";
 import UserListItem from "../UserAvatar/UserListItem";
 import { Spinner } from "@chakra-ui/spinner";
 import {
-    Drawer,
-    DrawerBody,
-    DrawerContent,
-    DrawerHeader,
-    DrawerOverlay,
-  } from "@chakra-ui/modal";
-  import { Input } from "@chakra-ui/input";
-  import { useToast } from "@chakra-ui/toast";
-  import axios from "axios";
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerHeader,
+  DrawerOverlay,
+} from "@chakra-ui/modal";
+import { Input } from "@chakra-ui/input";
+import { useToast } from "@chakra-ui/toast";
+import axios from "axios";
 import ChatLoading from "../ChatLoading";
+import { getSender } from "../../config/ChatLogics";
+import { Effect } from "react-notification-badge";
+import NotificationBadge from "react-notification-badge/lib/components/NotificationBadge";
 
 function SideDrawer() {
   const [search, setSearch] = useState("");
@@ -40,6 +43,8 @@ function SideDrawer() {
     user,
     chats,
     setChats,
+    notification,
+    setNotification,
   } = ChatState();
 
   const toast = useToast();
@@ -51,7 +56,6 @@ function SideDrawer() {
     navigate("/");
   };
 
-  
   const handleSearch = async () => {
     if (!search) {
       toast({
@@ -64,32 +68,32 @@ function SideDrawer() {
       return;
     }
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const config = {
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-    };
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
 
-    const { data } = await axios.get(`/api/user?search=${search}`, config);
+      const { data } = await axios.get(`/api/user?search=${search}`, config);
 
-    setLoading(false);
-    setSearchResult(data);
-  } catch (error) {
-    toast({
-      title: "Đã có lỗi xảy ra!",
-      description: "Failed to Load the Search Results",
-      status: "error",
-      duration: 5000,
-      isClosable: true,
-      position: "bottom-left",
-    });
-  }
-};
-  
-const accessChat = async (userId) => {
+      setLoading(false);
+      setSearchResult(data);
+    } catch (error) {
+      toast({
+        title: "Đã có lỗi xảy ra!",
+        description: "Failed to Load the Search Results",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom-left",
+      });
+    }
+  };
+
+  const accessChat = async (userId) => {
     try {
       setLoadingChat(true);
       const config = {
@@ -115,7 +119,7 @@ const accessChat = async (userId) => {
       });
     }
   };
-return (
+  return (
     <>
       <Box
         display="flex"
@@ -140,9 +144,25 @@ return (
         <div>
           <Menu>
             <MenuButton p={1}>
+              <NotificationBadge
+                count={notification.length}
+                effect={Effect.SCALE}
+              />
               <BellIcon fontSize="2xl" m={1} />
             </MenuButton>
-           
+            <MenuList pl={2}>
+              {!notification.length && "Không có tin nhắn mới"}
+              {notification.map((notif) => (
+                <MenuItem key={notif._id} onClick={() => {
+                  setSelectedChat(notif.chat)
+                  setNotification(notification.filter((n) => n !== notif));
+                }}>
+                  {notif.chat.isGroupChat
+                    ? `Có tin nhắn mới trong nhóm ${notif.chat.chatName}`
+                    : `Có tin nhắn mới từ ${getSender(user, notif.chat.users)}`}
+                </MenuItem>
+              ))}
+            </MenuList>
           </Menu>
           <Menu>
             <MenuButton as={Button} bg="white" rightIcon={<ChevronDownIcon />}>
@@ -167,7 +187,9 @@ return (
       <Drawer placement="left" onClose={onClose} isOpen={isOpen}>
         <DrawerOverlay />
         <DrawerContent>
-          <DrawerHeader borderBottomWidth="1px" textAlign="center">Tìm bạn bè</DrawerHeader>
+          <DrawerHeader borderBottomWidth="1px" textAlign="center">
+            Tìm bạn bè
+          </DrawerHeader>
           <DrawerBody>
             <Box display="flex" pb={2}>
               <Input
@@ -176,22 +198,20 @@ return (
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <Button
-              onClick={handleSearch}
-               >Tìm</Button>
+              <Button onClick={handleSearch}>Tìm</Button>
             </Box>
             {loading ? (
-                <ChatLoading />
-              ) : (
-                searchResult?.map((user) => (
-                  <UserListItem
-                    key={user._id}
-                    user={user}
-                    handleFunction={() => accessChat(user._id)}
-                  />
-                ))
-              )}
-              {loadingChat && <Spinner ml="auto" display="flex" />}
+              <ChatLoading />
+            ) : (
+              searchResult?.map((user) => (
+                <UserListItem
+                  key={user._id}
+                  user={user}
+                  handleFunction={() => accessChat(user._id)}
+                />
+              ))
+            )}
+            {loadingChat && <Spinner ml="auto" display="flex" />}
           </DrawerBody>
         </DrawerContent>
       </Drawer>

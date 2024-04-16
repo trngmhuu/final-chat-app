@@ -46,7 +46,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     },
   };
 
-  const { user, selectedChat, setSelectedChat } = ChatState();
+  const { user, selectedChat, setSelectedChat, notification, setNotification } =
+    ChatState();
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -95,6 +96,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         !selectedChatCompare ||
         selectedChatCompare._id !== newMessageReceived.chat._id
       ) {
+        if (!notification.includes(newMessageReceived)) {
+          setNotification([newMessageReceived, ...notification]);
+          setFetchAgain(!fetchAgain);
+        }
       } else {
         setMessages([...messages, newMessageReceived]);
       }
@@ -239,7 +244,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   />
                   {showPicker && (
                     <Picker
-                      pickerStyle={{ width: "100%" }} onEmojiClick={handleEmojiClick}
+                      pickerStyle={{ width: "100%" }}
+                      onEmojiClick={handleEmojiClick}
                     />
                   )}
                 </div>
