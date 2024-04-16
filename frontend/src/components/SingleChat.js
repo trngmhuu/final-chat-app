@@ -6,7 +6,8 @@ import {
   Spinner,
   FormControl,
   Input,
-  effect,
+  border,
+  position,
 } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useState } from "react";
@@ -20,30 +21,32 @@ import ScrollableChat from "./ScrollableChat";
 import io from "socket.io-client";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing-animation.json";
+import Picker from "emoji-picker-react";
 
 const ENDPOINT = "http://localhost:5000";
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
+  const toast = useToast();
+
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const toast = useToast();
+  const [showPicker, setShowPicker] = useState(false);
 
   const defaultOptions = {
     loop: true,
     autoplay: true,
     animationData: animationData,
     redenrerSettings: {
-      preserveAspectRatio: "xMidYMid slice"
-    }
-  }
+      preserveAspectRatio: "xMidYMid slice",
+    },
+  };
 
   const { user, selectedChat, setSelectedChat } = ChatState();
-  
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -117,7 +120,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           },
           config
         );
-        console.log(data);
         socket.emit("new message", data);
         setMessages([...messages, data]);
       } catch (error) {
@@ -150,6 +152,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         setTyping(false);
       }
     }, timerLength);
+  };
+
+  const handleEmojiClick = (event, emojiObject) => {
+    setNewMessage((newMessage) => newMessage + emojiObject.emoji);
   };
 
   return (
@@ -214,20 +220,38 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               </div>
             )}
             <FormControl onKeyDown={sendMessage} isRequired marginTop={3}>
-              {isTyping ? 
-              <div>
-                <Lottie
-                  options={defaultOptions}
-                  width={70}
-                  style={{marginBottom: 15, marginLeft: 0}}
-                />
-              </div> : <></>}
+              {isTyping ? (
+                <div>
+                  <Lottie
+                    options={defaultOptions}
+                    width={70}
+                    style={{ marginBottom: 15, marginLeft: 0 }}
+                  />
+                </div>
+              ) : (
+                <></>
+              )}
+              <div className="button-container">
+                <div className="emoji-icon">
+                  <img
+                    src="https://icons.getbootstrap.com/assets/icons/emoji-smile.svg"
+                    onClick={() => setShowPicker((val) => !val)}
+                  />
+                  {showPicker && (
+                    <Picker
+                      pickerStyle={{ width: "100%" }} onEmojiClick={handleEmojiClick}
+                    />
+                  )}
+                </div>
+              </div>
               <Input
                 variant="filled"
                 bg="#E0E0E0"
                 placeholder="Nhập tin nhắn..."
                 onChange={typingHandler}
                 value={newMessage}
+                float="right"
+                width="90%"
               />
             </FormControl>
           </Box>

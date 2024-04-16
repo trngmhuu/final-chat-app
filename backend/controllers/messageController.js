@@ -47,4 +47,31 @@ const allMessages = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { sendMessage, allMessages }
+const deleteMessage = asyncHandler(async (req, res) => {
+  const messageId = req.params.messageId;
+
+  try {
+    // Kiểm tra xem tin nhắn tồn tại không
+    const message = await Message.findById(messageId);
+    if (!message) {
+      res.status(404);
+      throw new Error("Không tìm thấy tin nhắn");
+    }
+
+    // Kiểm tra xem người dùng có quyền xóa tin nhắn không
+    if (message.sender.toString() !== req.user._id.toString()) {
+      res.status(403);
+      throw new Error("Bạn không có quyền xóa tin nhắn này");
+    }
+
+    // Xóa tin nhắn
+    await Message.findByIdAndDelete(messageId);
+
+    res.json({ message: "Xóa tin nhắn thành công" });
+  } catch (error) {
+    res.status(400);
+    throw new Error(error.message);
+  }
+});
+
+module.exports = { sendMessage, allMessages, deleteMessage }
