@@ -11,14 +11,26 @@ const sendMessage = asyncHandler(async (req, res) => {
     return res.sendStatus(400);
   }
 
-  var newMessage = {
-    sender: req.user._id,
-    content: content,
-    chat: chatId,
-  };
-
   try {
-    var message = await Message.create(newMessage);
+    // Tìm kiếm thông tin cuộc trò chuyện từ chatId
+    const chat = await Chat.findById(chatId);
+
+    // Lấy danh sách người nhận từ thông tin cuộc trò chuyện
+    const receiverIds = chat.users;
+    const senderIndex = receiverIds.indexOf(req.user._id.toString());
+
+    // Loại bỏ id của người gửi khỏi danh sách người nhận
+    if (senderIndex !== -1) {
+      receiverIds.splice(senderIndex, 1);
+    }
+
+    // Tạo tin nhắn mới chỉ với danh sách người nhận
+    var message = await Message.create({
+      sender: req.user._id,
+      receiver: receiverIds,
+      content: content,
+      chat: chatId,
+    });
     message = await message.populate("sender", "name pic");
     message = await message.populate("chat");
     message = await User.populate(message, {
