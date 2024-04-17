@@ -13,30 +13,50 @@ import {
 } from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
 import axios from "axios";
-// import io from "socket.io-client";
+import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  Button,
+} from "@chakra-ui/react";
 
 const ScrollableChat = ({ messages }) => {
-  const { user } = ChatState();
+  
+  const { user, selectedChat, setSelectedChat, notification, setNotification } = ChatState();
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
 
-  const handleDelete = async (messageId) => {
+  const onCloseDeleteAlert = () => setIsDeleteAlertOpen(false);
+
+  const handleDelete = async () => {
     try {
       const config = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      await axios.delete(`/api/message/${messageId}`, config);
+      await axios.delete(`/api/message/${messageToDelete}`, config);
       console.log("Xóa tin nhắn thành công!");
-      // io.emit("delete message", messageId);
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Lỗi: ", error);
     }
+    setIsDeleteAlertOpen(false);
   };
 
   const handleReply = (messageId) => {
     console.log("Trả lời tin nhắn:", messageId);
+  };
+
+  const deleteMessageAlertMessage = () => {
+    if (messages.find(m => m._id === messageToDelete)?.sender._id === user._id) {
+      return "Tin nhắn này sẽ bị xóa đối với mọi người trong đoạn chat mà không thể hoàn tác.";
+    } else {
+      return "Tin nhắn này sẽ bị gỡ khỏi thiết bị của bạn, nhưng vẫn sẽ hiển thị với các thành viên khác trong đoạn chat.";
+    }
   };
 
   return (
@@ -70,7 +90,7 @@ const ScrollableChat = ({ messages }) => {
                 display: "flex",
                 flexDirection: "column",
                 position: "relative",
-                fontSize: "16px"
+                fontSize: "16px",
               }}
               onClick={() => setSelectedMessage(m._id)}
             >
@@ -91,7 +111,14 @@ const ScrollableChat = ({ messages }) => {
                     transform="translateY(-50%)"
                   />
                   <MenuList position="relative">
-                    <MenuItem onClick={() => handleDelete(m._id)}>Xóa</MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setMessageToDelete(m._id);
+                        setIsDeleteAlertOpen(true);
+                      }}
+                    >
+                      Xóa
+                    </MenuItem>
                     <MenuItem onClick={() => handleReply(m._id)}>
                       Trả lời
                     </MenuItem>
@@ -114,6 +141,14 @@ const ScrollableChat = ({ messages }) => {
                     transform="translateY(-50%)"
                   />
                   <MenuList>
+                    <MenuItem
+                      onClick={() => {
+                        setMessageToDelete(m._id);
+                        setIsDeleteAlertOpen(true);
+                      }}
+                    >
+                      Xóa
+                    </MenuItem>
                     <MenuItem onClick={() => handleReply(m._id)}>
                       Trả lời
                     </MenuItem>
@@ -123,6 +158,30 @@ const ScrollableChat = ({ messages }) => {
             )}
           </div>
         ))}
+      <AlertDialog
+        isOpen={isDeleteAlertOpen}
+        onClose={onCloseDeleteAlert}
+        leastDestructiveRef={undefined}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Cảnh báo
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              {deleteMessageAlertMessage()}
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button onClick={onCloseDeleteAlert}>Hủy bỏ</Button>
+              <Button colorScheme="red" onClick={handleDelete} ml={3}>
+                Xác nhận
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </ScrollableFeed>
   );
 };

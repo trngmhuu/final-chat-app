@@ -41,7 +41,6 @@ const io = require("socket.io")(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log("Connected to socket.io server");
 
   socket.on("setup", (userData) => {
     socket.join(userData._id);
@@ -64,12 +63,4 @@ io.on("connection", (socket) => {
     });
   });
 
-  // socket.on("delete message", async (messageId) => {
-  //   try {
-  //     socket.emit("message deleted", messageId);
-  //   } catch (error) {
-  //     console.error("Lỗi khi xóa tin nhắn: ", error);
-  //   }
-  // });
-  
 });
